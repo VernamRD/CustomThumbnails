@@ -19,6 +19,11 @@
 # Fortran module files
 *.mod
 
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
 
 # Executables
 *.exe
@@ -39,6 +44,10 @@
 # Precompiled Assets
 SourceArt/**/*.png
 SourceArt/**/*.tga
+
+# Binary Files
+Binaries/*
+Plugins/*/Binaries/*
 
 # Builds
 Build/*
