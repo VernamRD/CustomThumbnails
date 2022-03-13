@@ -6,7 +6,6 @@ public class CustomThumbnails : ModuleRules
 {
 	public CustomThumbnails(ReadOnlyTargetRules Target) : base(Target)
 	{
-		bUsePrecompiled = true;
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
 		PublicIncludePaths.AddRange(
