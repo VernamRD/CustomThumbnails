@@ -56,7 +56,7 @@ void FCustomThumbnailsModule::ShutdownModule()
 
 void FCustomThumbnailsModule::CheckPointers()
 {
-    if (!PickerTabs.IsEmpty())
+    if (PickerTabs.Num() != 0)
     {
         for (int32 Index = PickerTabs.Num() - 1; Index >= 0; --Index)
         {

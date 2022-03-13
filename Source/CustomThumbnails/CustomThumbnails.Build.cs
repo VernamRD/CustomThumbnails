@@ -6,7 +6,6 @@ public class CustomThumbnails : ModuleRules
 {
 	public CustomThumbnails(ReadOnlyTargetRules Target) : base(Target)
 	{
-		bUsePrecompiled = false;
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
 		PublicIncludePaths.AddRange(
@@ -51,7 +50,6 @@ public class CustomThumbnails : ModuleRules
 				"Projects",
 				"AppFramework",
 				"PropertyEditor",
-				"EditorFramework",
 				"Slate",
 				"SlateCore",
 				"InputCore",

@@ -196,7 +196,7 @@ void FCustomThumbnailPickerTab::OnCheckBoxChanged(ECheckBoxState CheckBoxState)
 
 void FCustomThumbnailPickerTab::CreateEntryBoxList(const TArray<FAssetData>& Assets)
 {
-    if (ensure(!Assets.IsEmpty()))
+    if (ensure(Assets.Num() != 0))
     {
         // Clear ScrollBox before fill
         AssetScrollBox->ClearChildren();

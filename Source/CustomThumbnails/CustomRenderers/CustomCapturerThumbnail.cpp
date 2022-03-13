@@ -16,7 +16,7 @@ bool CustomCapturerThumbnail::CaptureNewCustomThumbnails(TArray<FAssetData>& Ass
 {
     UE_LOG(LogCTCustomRenderer, VeryVerbose, TEXT("Start register custom renderers"));
 
-    if (Assets.IsEmpty() || TextureAssets.IsEmpty())
+    if (Assets.Num() == 0 || TextureAssets.Num() == 0)
     {
         UE_LOG(LogCTCustomRenderer, Warning, TEXT("AssetsForRenderer is empty"));
         return false;
