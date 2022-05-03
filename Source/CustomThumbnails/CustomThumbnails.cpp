@@ -7,7 +7,6 @@
 #include "AssetRegistryModule.h"
 #include "ICustomThumbnailsModuleInterface.h"
 
-#include "WatchPointViewer.h"
 #include "Framework/Docking/LayoutExtender.h"
 
 #include "CustomThumbnailsStyle/CustomThumbnailsStyle.h"
@@ -37,7 +36,7 @@ void FCustomThumbnailsModule::StartupModule()
     auto& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>(TEXT("ContentBrowser"));
     auto& MenuExtenderDelegates = ContentBrowserModule.GetAllAssetViewContextMenuExtenders();
     MenuExtenderDelegates.Add(FContentBrowserMenuExtender_SelectedAssets::CreateRaw(this, &FCustomThumbnailsModule::CustomExtender));
-    
+
     UE_LOG(LogCTModule, Display, TEXT("Custom Thumbnail Module is ready"));
 }
 
@@ -50,7 +49,7 @@ void FCustomThumbnailsModule::ShutdownModule()
     FCustomThumbnailsStyle::Shutdown();
 
     FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(ThumbnailPickerTabName);
-    
+
     UE_LOG(LogCTModule, Verbose, TEXT("ShutdownModule"));
 }
 
@@ -60,41 +59,22 @@ void FCustomThumbnailsModule::CheckPointers()
     {
         for (int32 Index = PickerTabs.Num() - 1; Index >= 0; --Index)
         {
-            UE_LOG(LogCTModule, VeryVerbose, TEXT("ThumbnailPicker %i "), Index);
-
             if (PickerTabs[Index].IsValid())
             {
-                UE_LOG(LogCTModule, VeryVerbose, TEXT("ThumbnailPicker %i is Valid"), Index);
-
                 if (PickerTabs[Index]->GetTab().IsValid())
                 {
-                    UE_LOG(LogCTModule, VeryVerbose, TEXT("ThumbnailPickerTab %i Is Valid"), Index);
                     if (PickerTabs[Index]->GetTab()->IsParentValid())
                     {
-                        UE_LOG(LogCTModule, VeryVerbose, TEXT("ThumbnailPickerTab %i Is Parent Valid"), Index);
                         continue;
                     }
-                    else
-                    {
-                        UE_LOG(LogCTModule, VeryVerbose, TEXT("ThumbnailPickerTab %i Is Parent Invalid"), Index);
-                    }
+
                     PickerTabs[Index]->GetTab().Reset();
-                    UE_LOG(LogCTModule, VeryVerbose, TEXT("ThumbnailPickerTab Reset"));
                 }
-                else
-                {
-                    UE_LOG(LogCTModule, VeryVerbose, TEXT("ThumbnailPickerTab %i Is Invalid"), Index);
-                }
+
                 PickerTabs[Index].Reset();
-                UE_LOG(LogCTModule, VeryVerbose, TEXT("ThumbnailPicker Reset"));
-            }
-            else
-            {
-                UE_LOG(LogCTModule, VeryVerbose, TEXT("ThumbnailPickerTab %i is Invalid"), Index);
             }
 
             PickerTabs.RemoveSingle(PickerTabs[Index]);
-            UE_LOG(LogCTModule, VeryVerbose, TEXT("ThumbnailPickerTab %i has been Removed"), Index);
         }
     }
 }
@@ -110,7 +90,7 @@ TSharedRef<FExtender> FCustomThumbnailsModule::CustomExtender(const TArray<FAsse
     PickerTabs.Add(MakeShareable(new FCustomThumbnailPickerTab(Assets)));
 
     const auto MenuExtender = MakeShared<FExtender>();
-    
+
     MenuExtender->AddMenuExtension(                                                                            //
         "CreateBlueprintUsing",                                                                                //
         EExtensionHook::After,                                                                                 //

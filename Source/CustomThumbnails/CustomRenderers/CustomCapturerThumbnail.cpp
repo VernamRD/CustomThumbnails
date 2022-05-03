@@ -12,7 +12,7 @@
 
 DEFINE_LOG_CATEGORY(LogCTCustomRenderer);
 
-bool CustomCapturerThumbnail::CaptureNewCustomThumbnails(TArray<FAssetData>& Assets, TArray<FAssetData> TextureAssets)
+bool FCustomCapturerThumbnail::CaptureNewCustomThumbnails(TArray<FAssetData>& Assets, TArray<FAssetData> TextureAssets)
 {
     UE_LOG(LogCTCustomRenderer, VeryVerbose, TEXT("Start register custom renderers"));
 
@@ -25,11 +25,13 @@ bool CustomCapturerThumbnail::CaptureNewCustomThumbnails(TArray<FAssetData>& Ass
     for (int32 Index = 0; Index < Assets.Num(); Index++)
     {
         FAssetData& Asset = Assets[Index];
-        FAssetData& TextureAsset = TextureAssets.Num() == 1 ? TextureAssets[0] : TextureAssets[Index];
+        FAssetData& TextureAsset = TextureAssets.Num() == 1 || TextureAssets.Num() != Assets.Num()
+                                       ? TextureAssets[0]
+                                       : TextureAssets[Index];
 
         UTexture2D* TextureObject = Cast<UTexture2D>(TextureAsset.GetAsset());
         if (TextureObject == nullptr) continue;
-        
+
         // Setup object names
         const FString ObjectFullName = Asset.GetFullName();
         const FString PackageName = Asset.PackageName.ToString();
@@ -41,24 +43,24 @@ bool CustomCapturerThumbnail::CaptureNewCustomThumbnails(TArray<FAssetData>& Ass
         // Get package assets
         UPackage* AssetPackage = FindObject<UPackage>(NULL, *PackageName);
         UPackage* TexturePackage = FindObject<UPackage>(NULL, *TexturePackageName);
-        
-        if (ensure(AssetPackage != nullptr && TexturePackage != nullptr))
+
+        if (ensureAlwaysMsgf((AssetPackage != nullptr && TexturePackage != nullptr), TEXT("Asset or Texture package is NOT VALID")))
         {
             // Get texture thumbnail
-            if (ensure(TexturePackage->HasThumbnailMap()))
+            if (ensureAlwaysMsgf(TexturePackage->HasThumbnailMap(), TEXT("Texture package does not have a thumbnail")))
             {
                 // Get thumbnail map
                 const FThumbnailMap& TexturePackageThumbnailMap = TexturePackage->GetThumbnailMap();
                 // Find in thumbnail map required thumbnail
                 const FObjectThumbnail* TextureObjectThumbnail = ThumbnailTools::GetThumbnailForObject(TextureObject);
 
-                if (ensure(TextureObjectThumbnail != nullptr))
+                if (ensureAlwaysMsgf(TextureObjectThumbnail != nullptr, TEXT("Texture object thumbnail is NULL")))
                 {
                     // Create temp thumbnail
                     FObjectThumbnail TempThumbnail = FObjectThumbnail(*TextureObjectThumbnail);
 
                     FObjectThumbnail* NewThumbnail = ThumbnailTools::CacheThumbnail(ObjectFullName, &TempThumbnail, AssetPackage);
-                    if (ensure(NewThumbnail != nullptr))
+                    if (ensureAlwaysMsgf(NewThumbnail != nullptr, TEXT("New thumbnail is NULL")))
                     {
                         // We need to indicate that the package needs to be resaved
                         AssetPackage->MarkPackageDirty();

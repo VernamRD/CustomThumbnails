@@ -7,7 +7,7 @@
 #include "ICustomThumbnailsModuleInterface.h"
 
 /*=====================================================================================================================
-*                              How does it work?
+*                                              How does it work?
 *======================================================================================================================
 *
 *   1. Unreal Engine creates an instance of the module and calls StartupModule through the IModuleInterface
@@ -30,13 +30,16 @@
 *   as well as exit and apply buttons.
 *
 *   The property boxes are created by the FCustomThumbnailPickerTab::CreateEntryBoxList function,
-*   which creates custom storage-operator instances and places them in an array:
+*   which creates the lines:
+*   Asset for custom thumbnail - TextureAsset for capture thumbnail
+*   In these lines, to get and select an asset used a custom widget:
 *   
-*   *CustomAssetProperty
-*   *TextureAssetProperty
+*   SAssetPropertyEntryBox
 *
-*   These stores have a similar functionality to the usual SObjectPropertyEntryBox,
-*   but allow more convenient to keep them in an array, read the data, or maybe I'm just a crook
+*   This widget inherits from SObjectPropertyEntryBox however,
+*   it allows you to set the asset initially
+*   it is convenient to read the properties immediately in the FAssetData type
+*   and also add classes that should be filtered, even if they are children of allowed
 *
 *   7. When you click the apply button, the Callback function FCustomThumbnailPickerTab::OnApply comes out,
 *   which reads the assets in the proprietary boxes and sends them to the static method CustomCapturerThumbnail::CaptureNewCustomThumbnails
