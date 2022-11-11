@@ -1,108 +1,84 @@
 //Copyright © 2022 TIGan. All Rights Reserved.
 
 #include "CustomThumbnails.h"
-
 #include "ContentBrowserModule.h"
-
 #include "AssetRegistryModule.h"
-#include "ICustomThumbnailsModuleInterface.h"
-
-#include "Framework/Docking/LayoutExtender.h"
-
+#include "AssetToolsModule.h"
 #include "CustomThumbnailsStyle/CustomThumbnailsStyle.h"
+#include "CustomThumbnailEditor/CustomThumbnailEditorSummoner.h"
 
-#include "CustomThumbnailPickerTab/CustomThumbnailPickerTab.h"
-
-#include "LevelEditor.h"
-#include "ToolMenu.h"
-#include "ContentBrowserMenuExtension/ContentBrowserMenuExtension.h"
-#include "Widgets/Docking/SDockTab.h"
+IMPLEMENT_MODULE(FCustomThumbnailsModule, CustomThumbnails)
 
 DEFINE_LOG_CATEGORY(LogCTModule);
 
 #define LOCTEXT_NAMESPACE "FCustomThumbnailsModule"
 
+const FName FCustomThumbnailsModule::ThumbnailPickerTabName = "CustomThumbnailEditor";
+
+FCustomThumbnailsModule::FCustomThumbnailsModule()
+{
+    CustomThumbnailEditorSummoner = nullptr;
+    MenuExtender = nullptr;
+    MenuExtension = nullptr;
+}
+
 void FCustomThumbnailsModule::StartupModule()
 {
-    // This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
-
-    UE_LOG(LogCTModule, Verbose, TEXT("StartupModule"));
-
+    // Init style
     FCustomThumbnailsStyle::Initialize();
     FCustomThumbnailsStyle::ReloadTextures();
 
-    ICustomThumbnailsModuleInterface::StartupModule();
+    // Create editor summoner
+    CustomThumbnailEditorSummoner = MakeShareable(new FCustomThumbnailEditorSummoner);
 
-    auto& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>(TEXT("ContentBrowser"));
-    auto& MenuExtenderDelegates = ContentBrowserModule.GetAllAssetViewContextMenuExtenders();
+    // Extend asset action menu
+    MenuExtender = MakeShared<FExtender>();
+    MenuExtension = MenuExtender->AddMenuExtension(
+        "CreateBlueprintUsing",
+        EExtensionHook::After,
+        TSharedPtr<FUICommandList>(),
+        FMenuExtensionDelegate::CreateRaw(this, &FCustomThumbnailsModule::AddMenuEntry)
+        );
+
+    // Add delegate in content browser context content menu action
+    FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>(TEXT("ContentBrowser"));
+    TArray<FContentBrowserMenuExtender_SelectedAssets>& MenuExtenderDelegates = ContentBrowserModule.GetAllAssetViewContextMenuExtenders();
     MenuExtenderDelegates.Add(FContentBrowserMenuExtender_SelectedAssets::CreateRaw(this, &FCustomThumbnailsModule::CustomExtender));
-
-    UE_LOG(LogCTModule, Display, TEXT("Custom Thumbnail Module is ready"));
 }
 
 void FCustomThumbnailsModule::ShutdownModule()
 {
-    // This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-    // we call this function before unloading the module.
-    ICustomThumbnailsModuleInterface::ShutdownModule();
+    FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>(TEXT("ContentBrowser"));
+    TArray<FContentBrowserMenuExtender_SelectedAssets>& MenuExtenderDelegates = ContentBrowserModule.GetAllAssetViewContextMenuExtenders();
+
+    MenuExtender->RemoveExtension(MenuExtension.ToSharedRef());
 
     FCustomThumbnailsStyle::Shutdown();
-
-    FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(ThumbnailPickerTabName);
-
-    UE_LOG(LogCTModule, Verbose, TEXT("ShutdownModule"));
-}
-
-void FCustomThumbnailsModule::CheckPointers()
-{
-    if (!PickerTabs.IsEmpty())
-    {
-        for (int32 Index = PickerTabs.Num() - 1; Index >= 0; --Index)
-        {
-            if (PickerTabs[Index].IsValid())
-            {
-                if (PickerTabs[Index]->GetTab().IsValid())
-                {
-                    if (PickerTabs[Index]->GetTab()->IsParentValid())
-                    {
-                        continue;
-                    }
-
-                    PickerTabs[Index]->GetTab().Reset();
-                }
-
-                PickerTabs[Index].Reset();
-            }
-
-            PickerTabs.RemoveSingle(PickerTabs[Index]);
-        }
-    }
 }
 
 TSharedRef<FExtender> FCustomThumbnailsModule::CustomExtender(const TArray<FAssetData>& Assets)
 {
-    UE_LOG(LogCTModule, VeryVerbose, TEXT("CustomExtender Start"));
+    SelectedAssets = Assets;
 
-    // Create extension for content browser
-    Extension = MakeShareable(new FContentBrowserMenuExtension(Assets));
-    CheckPointers();
-    // Preparing PickerTab
-    PickerTabs.Add(MakeShareable(new FCustomThumbnailPickerTab(Assets)));
+    return MenuExtender.ToSharedRef();
+}
 
-    const auto MenuExtender = MakeShared<FExtender>();
-
-    MenuExtender->AddMenuExtension(                                                                            //
-        "CreateBlueprintUsing",                                                                                //
-        EExtensionHook::After,                                                                                 //
-        TSharedPtr<FUICommandList>(),                                                                          //
-        FMenuExtensionDelegate::CreateSP(Extension.ToSharedRef(), &FContentBrowserMenuExtension::AddMenuEntry) //
+void FCustomThumbnailsModule::AddMenuEntry(FMenuBuilder& MenuBuilder)
+{
+    MenuBuilder.AddMenuEntry(
+        FText::FromString("Add Custom Thumbnail"),
+        FText::FromString("Add a thumbnail for this asset and all its children"),
+        FSlateIcon(),
+        FUIAction(FExecuteAction::CreateRaw(this, &FCustomThumbnailsModule::OnAddCustomThumbnailButtonClicked))
         );
+}
 
-    UE_LOG(LogCTModule, VeryVerbose, TEXT("CustomExtender End"));
+void FCustomThumbnailsModule::OnAddCustomThumbnailButtonClicked()
+{
+    check(CustomThumbnailEditorSummoner);
 
-    return MenuExtender;
+    CustomThumbnailEditorSummoner->CreateEditor(SelectedAssets);
+    FGlobalTabmanager::Get()->TryInvokeTab(ThumbnailPickerTabName);
 }
 
 #undef LOCTEXT_NAMESPACE
-
-IMPLEMENT_MODULE(FCustomThumbnailsModule, CustomThumbnails)
